@@ -1,49 +1,47 @@
 package com.example.demo.service; 
 
-import com.example.demo.model.Product; 
-import com.example.demo.repository.ProductRepository; 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.demo.model.ProductoModel; 
+import com.example.demo.repository.ProductoRepository; 
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class ProductService {
+public class ProductoService {
 
-    private final ProductRepository productRepository;
+    private final ProductoRepository productoRepository;
 
-    @Autowired
-    public ProductService(ProductRepository productRepository) {
-        this.productRepository = productRepository;
+    public ProductoService(ProductoRepository productoRepository) {
+        this.productoRepository = productoRepository;
     }
 
    
-    public Product saveProduct(Product product) {
-        return productRepository.save(product);
+    public ProductoModel saveProduct(ProductoModel producto) {
+        return productoRepository.save(producto);
     }
 
     
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public List<ProductoModel> getAllProducts() {
+        return productoRepository.findAll();
     }
 
     
-    public Optional<Product> getProductById(Long id) {
-        return productRepository.findById(id);
+    public Optional<ProductoModel> getProductById(Long id) {
+        return productoRepository.findById(id);
     }
 
     
-    public Product updateProduct(Long id, Product productDetails) {
-        if (productRepository.existsById(id)) {
-            productDetails.setId(id); 
-            return productRepository.save(productDetails);
+    public ProductoModel updateProduct(Long id, ProductoModel productoDetails) {
+        if (productoRepository.existsById(id)) {
+            productoDetails.setId(id); 
+            return productoRepository.save(productoDetails);
         }
         return null; 
     }
 
     
     public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+        productoRepository.deleteById(id);
     }
 }
