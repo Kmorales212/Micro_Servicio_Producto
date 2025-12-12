@@ -3,7 +3,6 @@ package com.example.demo.controller;
 import com.example.demo.model.ProductoModel; 
 import com.example.demo.service.ProductoService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,8 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/productos")
-// 1. Título y descripción en Swagger
-@Tag(name = "Catálogo de Productos", description = "Operaciones para crear, listar, editar y eliminar productos del inventario")
+@Tag(name = "Catálogo de Productos", description = "Operaciones del inventario de pastelería")
 public class ProductoController {
 
     private final ProductoService productoService;
@@ -25,67 +23,53 @@ public class ProductoController {
         this.productoService = productoService;
     }
 
-    // --- CREAR PRODUCTO ---
-    @Operation(summary = "Crear un nuevo producto", description = "Guarda un producto en la base de datos")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Producto creado exitosamente"),
-        @ApiResponse(responseCode = "400", description = "Datos del producto inválidos")
-    })
-    @PostMapping
-    public ResponseEntity<ProductoModel> createProduct(@RequestBody ProductoModel producto) {
-        ProductoModel savedProduct = productoService.saveProduct(producto);
-        return new ResponseEntity<>(savedProduct, HttpStatus.CREATED); 
-    }
-
-    // --- LISTAR PRODUCTOS ---
-    @Operation(summary = "Listar todos los productos", description = "Devuelve el catálogo completo de productos disponibles")
+    @Operation(summary = "Listar todos los productos", description = "Devuelve la lista incluyendo los cargados automáticamente")
     @ApiResponse(responseCode = "200", description = "Lista recuperada exitosamente")
     @GetMapping
     public ResponseEntity<List<ProductoModel>> getAllProducts() {
-        List<ProductoModel> productos = productoService.getAllProducts();
-        return ResponseEntity.ok(productos); 
+        return ResponseEntity.ok(productoService.getAllProducts()); 
     }
 
-    // --- BUSCAR POR ID ---
-    @Operation(summary = "Buscar producto por ID", description = "Obtiene los detalles de un producto específico")
+    @Operation(summary = "Crear un nuevo producto", description = "Guarda un producto manualmente")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Producto encontrado"),
-        @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+        @ApiResponse(responseCode = "201", description = "Creado"),
+        @ApiResponse(responseCode = "400", description = "Error en datos")
     })
+    @PostMapping
+    public ResponseEntity<?> createProduct(@RequestBody ProductoModel producto) {
+        try {
+            // 1. Validar si viene sin imagen
+            if (producto.getImagenUrl() == null || producto.getImagenUrl().trim().isEmpty()) {
+                producto.setImagenUrl("https://placehold.co/400x300/e9ecef/6c757d?text=Sin+Imagen");
+            }
+
+            // 2. Guardar en base de datos
+            ProductoModel savedProduct = productoService.saveProduct(producto);
+            return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
+            
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al crear el producto: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Buscar por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ProductoModel> getProductById(
-            @Parameter(description = "ID del producto a buscar") @PathVariable Long id) {
+    public ResponseEntity<ProductoModel> getProductById(@PathVariable Long id) {
         return productoService.getProductById(id)
                 .map(ResponseEntity::ok) 
                 .orElse(ResponseEntity.notFound().build()); 
     }
 
-    // --- ACTUALIZAR PRODUCTO ---
-    @Operation(summary = "Actualizar producto", description = "Modifica los datos de un producto existente")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Producto actualizado correctamente"),
-        @ApiResponse(responseCode = "404", description = "Producto no encontrado")
-    })
+    @Operation(summary = "Actualizar producto")
     @PutMapping("/{id}")
-    public ResponseEntity<ProductoModel> updateProduct(
-            @Parameter(description = "ID del producto a editar") @PathVariable Long id, 
-            @RequestBody ProductoModel productoDetails) {
-        ProductoModel updatedProduct = productoService.updateProduct(id, productoDetails);
-        if (updatedProduct != null) {
-            return ResponseEntity.ok(updatedProduct); 
-        }
-        return ResponseEntity.notFound().build(); 
+    public ResponseEntity<ProductoModel> updateProduct(@PathVariable Long id, @RequestBody ProductoModel productoDetails) {
+        ProductoModel updated = productoService.updateProduct(id, productoDetails);
+        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build(); 
     }
 
-    // --- ELIMINAR PRODUCTO ---
-    @Operation(summary = "Eliminar producto", description = "Elimina un producto del catálogo permanentemente")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "Producto eliminado correctamente"),
-        @ApiResponse(responseCode = "404", description = "El producto no existe")
-    })
+    @Operation(summary = "Eliminar producto")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(
-            @Parameter(description = "ID del producto a eliminar") @PathVariable Long id) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productoService.deleteProduct(id);
         return ResponseEntity.noContent().build(); 
     }
